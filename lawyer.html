@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Advogado</title>
+    <link rel="stylesheet" href="style.css?v=black-gold-2">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo">Dr. Weverton Quintairos</a>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        <section class="section">
+            <div class="container">
+                <h1 class="section-title">Mensagens de Clientes</h1>
+                <p class="section-subtitle">Clique em um cliente para abrir todo o historico de conversa e responder.</p>
+                <div id="messages-container" class="lawyer-panel"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="response-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <div>
+                    <h2 id="conversation-title">Conversa do cliente</h2>
+                    <p id="conversation-meta" class="text-muted"></p>
+                </div>
+            </div>
+            <div id="conversation-history" class="conversation-history"></div>
+            <div class="response-area">
+                <textarea id="response-text" placeholder="Digite sua resposta..."></textarea>
+                <button id="send-response">Enviar Resposta</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="lawyer.js?v=black-gold-2" defer></script>
+</body>
+</html>
