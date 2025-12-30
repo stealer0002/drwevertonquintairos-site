@@ -1,7 +1,11 @@
 <?php
 declare(strict_types=1);
 
-$config = require __DIR__ . '/config.php';
+$configFile = __DIR__ . '/app-config.php';
+if (!is_readable($configFile)) {
+    $configFile = __DIR__ . '/config.php';
+}
+$config = require $configFile;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -446,7 +450,7 @@ try {
                     WHERE m2.client_id = m.client_id
                       AND m2.is_client_message = 1
                  )
-                 ORDER BY m.timestamp DESC'
+                 ORDER BY m.timestamp DESC"
             );
             foreach ($messages as $index => $row) {
                 $messages[$index] = normalize_message_row($row);
