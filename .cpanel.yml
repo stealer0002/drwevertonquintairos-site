@@ -1,4 +1,4 @@
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/wevert93/public_html/
-    - /usr/bin/rsync -av --delete --exclude='.git' --exclude='.cpanel.yml' ./ $DEPLOYPATH
+    - export DEPLOYPATH=/home4/wevert93/public_html/
+    - /bin/sh -c 'shopt -s dotglob; cp -R * "$DEPLOYPATH"'
