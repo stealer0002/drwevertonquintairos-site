@@ -118,6 +118,20 @@ function db_get(SQLite3 $db, string $sql, array $params = []): ?array
     return $row ?: null;
 }
 
+function normalize_message_row(array $row): array
+{
+    if (array_key_exists('id', $row)) {
+        $row['id'] = (int)$row['id'];
+    }
+    if (array_key_exists('is_client_message', $row)) {
+        $row['is_client_message'] = (int)$row['is_client_message'];
+    }
+    if (array_key_exists('read', $row)) {
+        $row['read'] = (int)$row['read'];
+    }
+    return $row;
+}
+
 function build_system_prompt(array $state): string
 {
     $pending = [];
@@ -389,6 +403,9 @@ try {
                 'SELECT * FROM messages WHERE client_id = ? ORDER BY timestamp ASC',
                 [$clientId]
             );
+            foreach ($messages as $index => $row) {
+                $messages[$index] = normalize_message_row($row);
+            }
             json_response($messages);
         }
         case 'get-messages': {
@@ -402,12 +419,20 @@ try {
                  JOIN (
                     SELECT client_id, MAX(id) AS max_id
                     FROM messages
-                    WHERE is_client_message = 1
                     GROUP BY client_id
                  ) last ON last.max_id = m.id
                  LEFT JOIN clients c ON c.client_id = m.client_id
+                 WHERE EXISTS (
+                    SELECT 1
+                    FROM messages m2
+                    WHERE m2.client_id = m.client_id
+                      AND m2.is_client_message = 1
+                 )
                  ORDER BY m.timestamp DESC'
             );
+            foreach ($messages as $index => $row) {
+                $messages[$index] = normalize_message_row($row);
+            }
             json_response($messages);
         }
         case 'send-lawyer-message': {
