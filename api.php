@@ -442,15 +442,10 @@ try {
                  JOIN (
                     SELECT client_id, MAX(id) AS max_id
                     FROM messages
+                    WHERE is_client_message = 1
                     GROUP BY client_id
                  ) last ON last.max_id = m.id
                  LEFT JOIN clients c ON c.client_id = m.client_id
-                 WHERE EXISTS (
-                    SELECT 1
-                    FROM messages m2
-                    WHERE m2.client_id = m.client_id
-                      AND m2.is_client_message = 1
-                 )
                  ORDER BY m.timestamp DESC"
             );
             foreach ($messages as $index => $row) {
