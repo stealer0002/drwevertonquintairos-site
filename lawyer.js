@@ -114,9 +114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return '';
-        const normalized = String(timestamp).includes('T')
-            ? String(timestamp)
-            : `${String(timestamp).replace(' ', 'T')}Z`;
+        const raw = String(timestamp);
+        const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
         const date = new Date(normalized);
         if (Number.isNaN(date.getTime())) return String(timestamp);
         return date.toLocaleString('pt-BR');
