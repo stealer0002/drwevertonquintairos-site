@@ -23,6 +23,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// Evitar cache para arquivos estáticos durante atualizações frequentes
+app.use((req, res, next) => {
+    if (req.method === 'GET' && /\.(html|css|js)$/.test(req.path)) {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.set('Surrogate-Control', 'no-store');
+    }
+    next();
+});
+
 app.use(express.static(__dirname));
 
 const db = new sqlite3.Database('./chat.db', (err) => {
