@@ -112,6 +112,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 8000);
     };
 
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return '';
+        const normalized = String(timestamp).includes('T')
+            ? String(timestamp)
+            : `${String(timestamp).replace(' ', 'T')}Z`;
+        const date = new Date(normalized);
+        if (Number.isNaN(date.getTime())) return String(timestamp);
+        return date.toLocaleString('pt-BR');
+    };
+
     const processNewMessages = (messages, notify) => {
         const newClientMessages = [];
         const now = Date.now();
@@ -228,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><i class="fas ${msg.read ? 'fa-eye' : 'fa-eye-slash'}"></i></td>
                 <td>${msg.client_name || ''}</td>
                 <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
-                <td>${new Date(msg.timestamp).toLocaleString()}</td>
+                <td>${formatTimestamp(msg.timestamp)}</td>
                 <td><button class="respond-btn" data-id="${msg.client_id}" data-name="${msg.client_name || 'Cliente'}" data-location="${msg.client_location || ''}" data-phone="${msg.client_phone || ''}" data-message-id="${msg.id}">Abrir</button></td>
             `;
             tbody.appendChild(row);
@@ -309,7 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 metaDiv.className = 'meta';
                 metaDiv.innerHTML = `
                         <span>${msg.is_client_message ? 'Cliente' : 'Equipe'}</span>
-                        <span>${new Date(msg.timestamp).toLocaleString()}</span>
+                        <span>${formatTimestamp(msg.timestamp)}</span>
                 `;
 
                 // Botão de apagar mensagem individual

@@ -412,6 +412,7 @@ try {
                 'INSERT INTO messages (message, is_client_message, client_id) VALUES (?, ?, ?)',
                 [$botResponse, 0, $clientId]
             );
+            sync_message_details($db, $clientId, $state);
 
             json_response(['message' => $botResponse]);
         }
