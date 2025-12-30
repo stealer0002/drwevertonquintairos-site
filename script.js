@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBody = document.getElementById('chat-body');
     const chatInput = document.getElementById('chat-input');
     const sendChat = document.getElementById('send-chat');
-    const apiEndpoint = 'api.php';
+    const apiEndpoint = '/api.php';
     const fetchNoCache = { cache: 'no-store' };
     const printButton = document.createElement('button');
     printButton.innerHTML = '<i class="fas fa-print"></i>';
