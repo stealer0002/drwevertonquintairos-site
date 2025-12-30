@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const conversationTitle = document.getElementById('conversation-title');
     const conversationMeta = document.getElementById('conversation-meta');
     const apiEndpoint = '/api.php';
+    const loginUrl = 'login.php';
     let currentClientId = null;
     let allClientMessages = [];
     let currentConversationMessages = [];
@@ -130,6 +131,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 8000);
     };
 
+    const redirectToLogin = () => {
+        window.location.href = loginUrl;
+    };
+
+    const ensureAuthResponse = (response) => {
+        if (response.status === 401) {
+            redirectToLogin();
+            return false;
+        }
+        return true;
+    };
+
+    const ensureAuthenticated = async () => {
+        try {
+            const response = await fetch(`${apiEndpoint}?action=auth-status`, { cache: 'no-store' });
+            if (!response.ok) {
+                redirectToLogin();
+                return false;
+            }
+            const data = await response.json();
+            if (!data.authenticated) {
+                redirectToLogin();
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            redirectToLogin();
+            return false;
+        }
+    };
+
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return '';
         const raw = String(timestamp);
@@ -166,6 +199,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const notify = Boolean(options.notify);
         try {
             const response = await fetch(`${apiEndpoint}?action=get-messages`, { cache: 'no-store' });
+            if (!ensureAuthResponse(response)) {
+                return;
+            }
             if (response.ok) {
                 const messages = await response.json();
                 allClientMessages = messages;
@@ -194,10 +230,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    await refreshClientList({ notify: false });
-    setInterval(() => {
-        refreshClientList({ notify: true });
-    }, 5000);
+    const startPanel = async () => {
+        const isAuthed = await ensureAuthenticated();
+        if (!isAuthed) return;
+        await refreshClientList({ notify: false });
+        setInterval(() => {
+            refreshClientList({ notify: true });
+        }, 5000);
+    };
+
+    await startPanel();
 
     function displayMessages(messages) {
         messagesContainer.innerHTML = '';
@@ -296,13 +338,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function markRowAsRead(messageId, rowElement) {
         if (!messageId) return;
         try {
-            await fetch(`${apiEndpoint}?action=mark-as-read`, {
+            const response = await fetch(`${apiEndpoint}?action=mark-as-read`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ messageId })
             });
+            if (!ensureAuthResponse(response)) {
+                return;
+            }
             if (rowElement) {
                 rowElement.classList.remove('unread');
                 rowElement.classList.add('read');
@@ -317,7 +362,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadConversation(clientId) {
         conversationHistory.innerHTML = '<p>Carregando conversa...</p>';
         try {
-            const resp = await fetch(`${apiEndpoint}?action=get-client-messages&clientId=${encodeURIComponent(clientId)}`);
+            const resp = await fetch(`${apiEndpoint}?action=get-client-messages&clientId=${encodeURIComponent(clientId)}&admin=1`);
+            if (!ensureAuthResponse(resp)) {
+                conversationHistory.innerHTML = '<p>Erro ao carregar conversa.</p>';
+                return;
+            }
             if (!resp.ok) {
                 conversationHistory.innerHTML = '<p>Erro ao carregar conversa.</p>';
                 return;
@@ -359,6 +408,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             },
                             body: JSON.stringify({ messageId: msg.id })
                         });
+                        if (!ensureAuthResponse(response)) {
+                            return;
+                        }
                         if (!response.ok) {
                             alert('Erro ao apagar mensagem.');
                             return;
@@ -413,6 +465,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 },
                 body: JSON.stringify({ clientId: currentClientId })
             });
+            if (!ensureAuthResponse(response)) {
+                return;
+            }
             if (!response.ok) {
                 alert('Erro ao apagar historico.');
                 return;
@@ -437,6 +492,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 },
                 body: JSON.stringify({})
             });
+            if (!ensureAuthResponse(response)) {
+                return;
+            }
             if (!response.ok) {
                 alert('Erro ao apagar todos os chats.');
                 return;
@@ -478,6 +536,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ message: responseMessage, clientId: currentClientId })
                 });
 
+                if (!ensureAuthResponse(response)) {
+                    return;
+                }
                 if (response.ok) {
                     alert('Resposta enviada com sucesso!');
                     responseText.value = '';

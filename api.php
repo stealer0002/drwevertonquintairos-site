@@ -7,6 +7,20 @@ if (!is_readable($configFile)) {
 }
 $config = require $configFile;
 
+$sessionName = $config['session_name'] ?? 'lawyer_session';
+$secureCookie = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+if (session_status() === PHP_SESSION_NONE) {
+    session_name($sessionName);
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $secureCookie,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    session_start();
+}
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
@@ -17,6 +31,18 @@ function json_response(array $payload, int $status = 200): void
     http_response_code($status);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+function is_lawyer_authenticated(): bool
+{
+    return !empty($_SESSION['lawyer_auth']);
+}
+
+function require_lawyer_authenticated(): void
+{
+    if (!is_lawyer_authenticated()) {
+        json_response(['error' => 'Unauthorized.'], 401);
+    }
 }
 
 function get_json_body(): array
@@ -321,6 +347,9 @@ try {
     }
 
     switch ($action) {
+        case 'auth-status': {
+            json_response(['authenticated' => is_lawyer_authenticated()]);
+        }
         case 'get-initial-message': {
             $welcomeMessage = 'Ola! Sou a assistente virtual do Dr. Weverton Quintairos. Para agilizar seu atendimento, por favor, me diga seu nome completo.';
             $clientId = bin2hex(random_bytes(8));
@@ -421,6 +450,10 @@ try {
             if ($clientId === '') {
                 json_response(['error' => 'clientId is required.'], 400);
             }
+            $isAdminRequest = trim((string)($_GET['admin'] ?? '')) === '1';
+            if ($isAdminRequest) {
+                require_lawyer_authenticated();
+            }
             $messages = db_all(
                 $db,
                 'SELECT * FROM messages WHERE client_id = ? ORDER BY timestamp ASC',
@@ -432,6 +465,7 @@ try {
             json_response($messages);
         }
         case 'get-messages': {
+            require_lawyer_authenticated();
             $messages = db_all(
                 $db,
                 "SELECT m.*,
@@ -454,6 +488,7 @@ try {
             json_response($messages);
         }
         case 'send-lawyer-message': {
+            require_lawyer_authenticated();
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 json_response(['error' => 'Invalid method.'], 405);
             }
@@ -473,6 +508,7 @@ try {
             json_response(['message' => 'Message sent successfully']);
         }
         case 'mark-as-read': {
+            require_lawyer_authenticated();
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 json_response(['error' => 'Invalid method.'], 405);
             }
@@ -485,6 +521,7 @@ try {
             json_response(['message' => 'Message marked as read']);
         }
         case 'delete-message': {
+            require_lawyer_authenticated();
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 json_response(['error' => 'Invalid method.'], 405);
             }
@@ -497,6 +534,7 @@ try {
             json_response(['message' => 'Message deleted']);
         }
         case 'delete-client-messages': {
+            require_lawyer_authenticated();
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 json_response(['error' => 'Invalid method.'], 405);
             }
@@ -510,6 +548,7 @@ try {
             json_response(['message' => 'Client messages deleted']);
         }
         case 'delete-all-messages': {
+            require_lawyer_authenticated();
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 json_response(['error' => 'Invalid method.'], 405);
             }
