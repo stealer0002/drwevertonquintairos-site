@@ -115,9 +115,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return '';
         const raw = String(timestamp);
-        const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+        const hasTimezone = /[zZ]$/.test(raw) || /[+-]\d{2}:?\d{2}$/.test(raw);
+        let normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+        if (!hasTimezone) {
+            normalized += 'Z';
+        }
         const date = new Date(normalized);
-        if (Number.isNaN(date.getTime())) return String(timestamp);
+        if (Number.isNaN(date.getTime())) return raw;
         return date.toLocaleString('pt-BR');
     };
 
