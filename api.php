@@ -282,6 +282,31 @@ function update_client_state(SQLite3 $db, array $state): void
     );
 }
 
+function sync_message_details(SQLite3 $db, string $clientId, array $state): void
+{
+    if ($state['name'] !== '') {
+        db_exec(
+            $db,
+            "UPDATE messages SET client_name = ? WHERE client_id = ? AND (client_name IS NULL OR client_name = '')",
+            [$state['name'], $clientId]
+        );
+    }
+    if ($state['location'] !== '') {
+        db_exec(
+            $db,
+            "UPDATE messages SET client_location = ? WHERE client_id = ? AND (client_location IS NULL OR client_location = '')",
+            [$state['location'], $clientId]
+        );
+    }
+    if ($state['phone'] !== '') {
+        db_exec(
+            $db,
+            "UPDATE messages SET client_phone = ? WHERE client_id = ? AND (client_phone IS NULL OR client_phone = '')",
+            [$state['phone'], $clientId]
+        );
+    }
+}
+
 try {
     $db = open_db($config['db_path']);
     init_db($db);
@@ -358,14 +383,7 @@ try {
             }
 
             update_client_state($db, $state);
-
-            if ($state['step'] === 'chatting') {
-                db_exec(
-                    $db,
-                    'UPDATE messages SET client_name = ?, client_location = ?, client_phone = ? WHERE client_id = ?',
-                    [$state['name'], $state['location'], $state['phone'], $clientId]
-                );
-            }
+            sync_message_details($db, $clientId, $state);
 
             $history = db_all(
                 $db,
@@ -411,10 +429,10 @@ try {
         case 'get-messages': {
             $messages = db_all(
                 $db,
-                'SELECT m.*,
-                        COALESCE(m.client_name, c.name) AS client_name,
-                        COALESCE(m.client_location, c.location) AS client_location,
-                        COALESCE(m.client_phone, c.phone) AS client_phone
+                "SELECT m.*,
+                        COALESCE(NULLIF(m.client_name, ''), NULLIF(c.name, '')) AS client_name,
+                        COALESCE(NULLIF(m.client_location, ''), NULLIF(c.location, '')) AS client_location,
+                        COALESCE(NULLIF(m.client_phone, ''), NULLIF(c.phone, '')) AS client_phone
                  FROM messages m
                  JOIN (
                     SELECT client_id, MAX(id) AS max_id
