@@ -31,3 +31,4 @@ Site dinamico que usa um chat com IA para fazer a triagem inicial de clientes do
 - `lawyer.html`: Painel do advogado.
 - `lawyer.js`: Logica do painel do advogado.
 - `chat.db`: Banco de dados SQLite.
+
